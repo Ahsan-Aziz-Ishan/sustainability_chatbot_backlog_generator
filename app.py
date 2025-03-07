@@ -12,7 +12,7 @@ load_dotenv()
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*/*"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 if "TOGETHER_API_KEY" not in os.environ:
     raise RuntimeError("Please set the TOGETHER_API_KEY environment variable")
@@ -57,10 +57,8 @@ def create_new_session() -> dict:
     }
     return session_id
 
-@app.route('/conversation', methods=['POST', 'OPTIONS'])
+@app.route('/conversation', methods=['POST'])
 def start_conversation():
-    if request.method == 'OPTIONS':
-        return _build_cors_preflight_response()
     session_id = create_new_session()
     response = jsonify({
         "session_id": session_id,
@@ -69,10 +67,8 @@ def start_conversation():
     })
     return response
 
-@app.route('/conversation/<session_id>', methods=['POST', 'OPTIONS'])
+@app.route('/conversation/<session_id>', methods=['POST'])
 def handle_message(session_id: str):
-    if request.method == 'OPTIONS':
-        return _build_cors_preflight_response()
     if session_id not in sessions or not sessions[session_id]["active"]:
         return jsonify({"error": "Invalid or expired session"}), 404
 
@@ -109,26 +105,16 @@ def handle_message(session_id: str):
         })
 
     response = Response(stream_with_context(generate()), mimetype='text/event-stream')
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Methods', 'POST')
     return response
 
-@app.route('/conversation/<session_id>', methods=['DELETE', 'OPTIONS'])
+@app.route('/conversation/<session_id>', methods=['DELETE'])
 def end_conversation(session_id: str):
-    if request.method == 'OPTIONS':
-        return _build_cors_preflight_response()
     if session_id in sessions:
         sessions[session_id]["active"] = False
         return jsonify({"status": "Session ended"})
     return jsonify({"error": "Session not found"}), 404
 
-def _build_cors_preflight_response():
-    response = jsonify()
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
-    return response
+
 
 BACKLOG_GENERATOR_SYSTEM_PROMPT = """
 You are an API endpoint. You can read human messages or json body and in return your job is to output a json response.
@@ -231,10 +217,8 @@ You are now connected with the api endpoint. Your message contains only the json
 """
 
 # Add this new endpoint before the if __name__ == '__main__' block
-@app.route('/generate-backlog', methods=['POST', 'OPTIONS'])
+@app.route('/generate-backlog', methods=['POST'])
 def generate_backlog():
-    if request.method == 'OPTIONS':
-        return _build_cors_preflight_response()
     data = request.json
     if not data:
         return jsonify({"error": "Message is required"}), 400
