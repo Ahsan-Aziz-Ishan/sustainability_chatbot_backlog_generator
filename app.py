@@ -12,7 +12,7 @@ load_dotenv()
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "*/*"}}, supports_credentials=True)
 
 if "TOGETHER_API_KEY" not in os.environ:
     raise RuntimeError("Please set the TOGETHER_API_KEY environment variable")
@@ -57,7 +57,7 @@ def create_new_session() -> dict:
     }
     return session_id
 
-@app.route('/conversation', methods=['POST'])
+@app.route('/conversation', methods=['POST', 'OPTIONS'])
 def start_conversation():
     if request.method == 'OPTIONS':
         return _build_cors_preflight_response()
@@ -71,6 +71,8 @@ def start_conversation():
 
 @app.route('/conversation/<session_id>', methods=['POST', 'OPTIONS'])
 def handle_message(session_id: str):
+    if request.method == 'OPTIONS':
+        return _build_cors_preflight_response()
     if session_id not in sessions or not sessions[session_id]["active"]:
         return jsonify({"error": "Invalid or expired session"}), 404
 
@@ -112,7 +114,7 @@ def handle_message(session_id: str):
     response.headers.add('Access-Control-Allow-Methods', 'POST')
     return response
 
-@app.route('/conversation/<session_id>', methods=['DELETE'])
+@app.route('/conversation/<session_id>', methods=['DELETE', 'OPTIONS'])
 def end_conversation(session_id: str):
     if request.method == 'OPTIONS':
         return _build_cors_preflight_response()
@@ -229,8 +231,10 @@ You are now connected with the api endpoint. Your message contains only the json
 """
 
 # Add this new endpoint before the if __name__ == '__main__' block
-@app.route('/generate-backlog', methods=['POST'])
+@app.route('/generate-backlog', methods=['POST', 'OPTIONS'])
 def generate_backlog():
+    if request.method == 'OPTIONS':
+        return _build_cors_preflight_response()
     data = request.json
     if not data:
         return jsonify({"error": "Message is required"}), 400
