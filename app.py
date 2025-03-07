@@ -6,10 +6,14 @@ from datetime import datetime
 from typing import Dict
 from dotenv import load_dotenv
 import json
+from flask_cors import CORS  # Add this import at the top
 
 load_dotenv()
 
+
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
+
 
 if "TOGETHER_API_KEY" not in os.environ:
     raise RuntimeError("Please set the TOGETHER_API_KEY environment variable")
