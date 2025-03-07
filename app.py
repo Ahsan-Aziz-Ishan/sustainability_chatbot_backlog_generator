@@ -1,3 +1,4 @@
+from flask_cors import CORS 
 from flask import Flask, request, jsonify, Response, stream_with_context
 from together import Together
 import os
@@ -6,14 +7,12 @@ from datetime import datetime
 from typing import Dict
 from dotenv import load_dotenv
 import json
-from flask_cors import CORS  # Add this import at the top
 
 load_dotenv()
 
 
 app = Flask(__name__)
-CORS(app)
-
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 if "TOGETHER_API_KEY" not in os.environ:
     raise RuntimeError("Please set the TOGETHER_API_KEY environment variable")
@@ -60,6 +59,8 @@ def create_new_session() -> dict:
 
 @app.route('/conversation', methods=['POST'])
 def start_conversation():
+    if request.method == 'OPTIONS':
+        return _build_cors_preflight_response()
     session_id = create_new_session()
     response = jsonify({
         "session_id": session_id,
@@ -68,7 +69,7 @@ def start_conversation():
     })
     return response
 
-@app.route('/conversation/<session_id>', methods=['POST'])
+@app.route('/conversation/<session_id>', methods=['POST', 'OPTIONS'])
 def handle_message(session_id: str):
     if session_id not in sessions or not sessions[session_id]["active"]:
         return jsonify({"error": "Invalid or expired session"}), 404
@@ -105,14 +106,27 @@ def handle_message(session_id: str):
             "content": "".join(full_response)
         })
 
-    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+    response = Response(stream_with_context(generate()), mimetype='text/event-stream')
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'POST')
+    return response
 
 @app.route('/conversation/<session_id>', methods=['DELETE'])
 def end_conversation(session_id: str):
+    if request.method == 'OPTIONS':
+        return _build_cors_preflight_response()
     if session_id in sessions:
         sessions[session_id]["active"] = False
         return jsonify({"status": "Session ended"})
     return jsonify({"error": "Session not found"}), 404
+
+def _build_cors_preflight_response():
+    response = jsonify()
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    response.headers.add('Access-Control-Allow-Methods', 'POST, OPTIONS')
+    return response
 
 BACKLOG_GENERATOR_SYSTEM_PROMPT = """
 You are an API endpoint. You can read human messages or json body and in return your job is to output a json response.
