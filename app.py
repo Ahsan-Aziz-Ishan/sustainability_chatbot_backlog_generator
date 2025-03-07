@@ -61,11 +61,13 @@ def create_new_session() -> dict:
 @app.route('/conversation', methods=['POST'])
 def start_conversation():
     session_id = create_new_session()
-    return jsonify({
+    response = jsonify({
         "session_id": session_id,
         "welcome_message": "Welcome to SE4GD AI Assistant! How can I help you today?",
-        "created_at": sessions[session_id]["created_at"]
+        "created_at": sessions[session_id]["created_at"],
     })
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 @app.route('/conversation/<session_id>', methods=['POST'])
 def handle_message(session_id: str):
