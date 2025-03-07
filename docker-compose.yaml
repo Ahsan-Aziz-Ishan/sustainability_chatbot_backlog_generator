@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  sustainability-chatbot:
+    container_name: sustainability-chatbot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      # - OTEL_PYTHON_LOG_CORRELATION=true
+    restart: unless-stopped

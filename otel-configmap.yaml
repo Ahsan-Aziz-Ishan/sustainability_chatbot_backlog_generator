@@ -1,0 +1,5 @@
+views:
+  - instrument_name: http.server.duration
+    aggregation:
+      type: histogram
+      explicit_bucket_boundaries: [0, 5, 10, 25, 50, 75]
