@@ -12,7 +12,7 @@ load_dotenv()
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app)
 
 
 if "TOGETHER_API_KEY" not in os.environ:
@@ -66,7 +66,6 @@ def start_conversation():
         "welcome_message": "Welcome to SE4GD AI Assistant! How can I help you today?",
         "created_at": sessions[session_id]["created_at"],
     })
-    response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
 @app.route('/conversation/<session_id>', methods=['POST'])
