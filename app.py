@@ -207,7 +207,7 @@ Now, you parse this sustainability analysis framework output and your job is to 
         "title": "string",
         "description": "text",
         "type": "positive/negative",
-        "impact": ["social,economical,environmental,individual,technical"],
+        "impact": ["social,economic,environmental,individual,technical"],
         "priority": "High/Medium/Low",
         "status": "To Do"
     }
