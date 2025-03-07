@@ -251,7 +251,10 @@ def generate_backlog():
             repetition_penalty=1,
             stop=["<|eot_id|>","<|eom_id|>"]
         )
-        return json.loads(str("[" + response.choices[0].message.content))
+        response = json.loads(str("[" + response.choices[0].message.content))
+        for r in response:
+            r["metrics"] = []
+        return response
         
     
     except Exception as e:
